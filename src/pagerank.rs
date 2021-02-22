@@ -1,6 +1,8 @@
 use std::fmt;
 use std::collections::HashMap;
 
+const DEFAULT_DELTA: f64 = 1.0;
+
 #[derive(Debug)]
 pub struct Node {
     pub weight: f64,
@@ -65,6 +67,54 @@ impl Graph {
         } else {
             *self.edges.get_mut(&source).unwrap().get_mut(&target).unwrap() += weight;
         }
+    }
+
+    pub fn page_rank(&mut self, alpha: f64, epsilon: f64, callback: fn(u32, f64)) {
+        
+        let mut delta = DEFAULT_DELTA;
+        let inverse = 1.0/(self.nodes.len()) as f64;
+        let nodes = &self.nodes;
+        
+        self.edges.iter_mut()
+            .filter(|(k,_)| nodes[k].outbound > 0.0)
+            .for_each(|(k,v)| v.iter_mut().for_each(|(_,y)| *y /= nodes[k].outbound));
+        
+        self.nodes.iter_mut()
+            .for_each(|(_,v)| v.weight = inverse);
+
+        while delta > epsilon{
+
+            let mut leak = 0.0 as f64;
+            let mut tmp_nodes : HashMap<u32,f64> = HashMap::new();
+            self.nodes.iter_mut()
+                .for_each(|(k,v)| {
+                    tmp_nodes.insert(*k,v.weight);
+                    if v.outbound == 0.0 {
+                        leak += v.weight;
+                    }
+                    v.weight = 0.0;
+		        });
+            
+            leak *= alpha;
+
+            let keys = self.nodes.keys().cloned().collect::<Vec<u32>>(); 
+            for k in keys {
+                if self.edges.contains_key(&k){
+                    for (x,y) in self.edges[&k].iter() {
+                        self.nodes.get_mut(&x).unwrap().weight += alpha*tmp_nodes[&k]*(*y);
+                    }
+                }
+                self.nodes.get_mut(&k).unwrap().weight += (1.0 - alpha)*inverse + leak*inverse;
+            }
+            
+            delta = 0.0;
+            
+            self.nodes.iter()
+                .for_each(|(k,v)| if tmp_nodes.contains_key(k) {delta += f64::abs(v.weight - tmp_nodes[k])});
+		}
+         
+        self.nodes.iter()
+            .for_each(|(k,v)| callback(*k,v.weight));
     }
 }
                 
