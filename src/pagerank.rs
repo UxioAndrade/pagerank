@@ -69,7 +69,7 @@ impl Graph {
         }
     }
 
-    pub fn page_rank(&mut self, alpha: f64, epsilon: f64, callback: fn(u32, f64)) {
+    pub fn page_rank(&mut self, alpha: f64, epsilon: f64,mut callback: impl FnMut(u32, f64)) {
         
         let mut delta = DEFAULT_DELTA;
         let inverse = 1.0/(self.nodes.len()) as f64;
@@ -118,4 +118,81 @@ impl Graph {
     }
 }
                 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    const EPSILON: f64 = 0.00001;
+
+    #[test]
+    fn test_empty() {
+        let mut g = Graph::new();
+        let mut actual : HashMap<u32, f64> = HashMap::new();
+        let expected : HashMap<u32, f64> = HashMap::new();
+
+        g.page_rank(0.85, 0.000001, |node, rank| {actual.insert(node,rank);});
+        assert_eq!(actual,expected);
+    }
+    
+    #[test]
+    fn test_simple() {
+        let mut g = Graph::new();
+        g.add_link(1,2,1.0);
+        g.add_link(1,3,1.0);
+        g.add_link(2,3,1.0);
+        g.add_link(2,4,1.0);
+        g.add_link(3,1,1.0);
+        
+        let mut actual : HashMap<u32,f64> = HashMap::new();
+        g.page_rank(0.85, 0.000001, |node, rank| {actual.insert(node,rank);});
+
+        assert!((actual[&1]-0.32721836185043207).abs() < EPSILON);
+        assert!((actual[&2]-0.2108699481253495).abs() < EPSILON);
+        assert!((actual[&3]-0.3004897566512289).abs() < EPSILON);
+        assert!((actual[&4]-0.16142193337298952).abs() < EPSILON);
+    }
+
+    #[test]
+    fn test_weighted() { 
+        
+        let mut g = Graph::new();
+        g.add_link(1,2,1.0);
+        g.add_link(1,3,2.0);
+        g.add_link(2,3,3.0);
+        g.add_link(2,4,4.0);
+        g.add_link(3,1,5.0);
+        
+        let mut actual : HashMap<u32,f64> = HashMap::new();
+        g.page_rank(0.85, 0.000001, |node, rank| {actual.insert(node,rank);});
+ 
+        assert!((actual[&1]-0.34983779905464363).abs() < EPSILON);
+        assert!((actual[&2]-0.1688733284604475).abs() < EPSILON);
+        assert!((actual[&3]-0.3295121849483849).abs() < EPSILON);
+        assert!((actual[&4]-0.15177668753652385).abs() < EPSILON);
+    }
+
+
+    #[test]
+    fn test_duplicates() { 
+        
+        let mut g = Graph::new();
+        g.add_link(1,2,1.0);
+        g.add_link(1,3,2.0);
+        g.add_link(2,3,3.0);
+        g.add_link(2,4,4.0);
+        g.add_link(3,1,5.0);
+        
+        g.add_link(1,2,6.0);
+        g.add_link(1,3,7.0);
+
+        let mut actual : HashMap<u32,f64> = HashMap::new();
+        g.page_rank(0.85, 0.000001, |node, rank| {actual.insert(node,rank);});
+
+        assert!((actual[&1]-0.3312334209098247).abs() < EPSILON);
+        assert!((actual[&2]-0.19655848316544225).abs() < EPSILON);
+        assert!((actual[&3]-0.3033555769882879).abs() < EPSILON);
+        assert!((actual[&4]-0.168852518936445).abs() < EPSILON);
+        
+    }
+
+}
