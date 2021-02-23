@@ -3,7 +3,10 @@ name = "pagerank"
 version = "0.1.0"
 authors = ["Uxío García Andrade <uxiog21@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Rust implementation of the Weighted PageRank algorithm"
+readme = "README.md"
+repository = "https://github.com/UxioAndrade/pagerank"
+license = "MIT"
+keywords = ["pagerank", "algorithm", "google"]
 
 [dependencies]
