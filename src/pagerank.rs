@@ -39,26 +39,26 @@ impl Graph {
     }
 
     fn insert_new_node(&mut self,index: u32) {
-        self.nodes.insert(
-            index,
-            Node::new(),
-        );
+        if !self.nodes.contains_key(&index) {
+            self.nodes.insert(
+                index,
+                Node::new(),
+            );
+        }
     }
 
     pub fn add_link(&mut self, source: u32, target: u32, weight: f64) {
-        if !self.nodes.contains_key(&source) {
-            self.insert_new_node(source)
-        }
+        self.insert_new_node(source);
         self.nodes.get_mut(&source).unwrap().outbound += weight;
-        if !self.nodes.contains_key(&target) {
-            self.insert_new_node(target)
-        }
+        self.insert_new_node(target);
+
         if !self.edges.contains_key(&source) {
             self.edges.insert(
                 source,
                 HashMap::new(),
             );
         };
+
         if !self.edges[&source].contains_key(&target) {
             self.edges.get_mut(&source).unwrap().insert(
                 target,
@@ -86,6 +86,7 @@ impl Graph {
 
             let mut leak = 0.0 as f64;
             let mut tmp_nodes : HashMap<u32,f64> = HashMap::new();
+            
             self.nodes.iter_mut()
                 .for_each(|(k,v)| {
                     tmp_nodes.insert(*k,v.weight);
@@ -98,6 +99,7 @@ impl Graph {
             leak *= alpha;
 
             let keys = self.nodes.keys().cloned().collect::<Vec<u32>>(); 
+            
             for k in keys {
                 if self.edges.contains_key(&k){
                     for (x,y) in self.edges[&k].iter() {
